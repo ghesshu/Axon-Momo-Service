@@ -16,39 +16,19 @@ namespace Axon_Momo_Service.Controllers
     public partial class CollectionController : BaseController
     {
         // Common headers
-         private static readonly string[] BcAuthorizeHeaders = ["X-Target-Environment"];
-        private static readonly string[] CreateOauth2TokenHeaders = ["X-Target-Environment"];
-        private static readonly string[] PaymentHeaders = ["X-Reference-Id", "X-Target-Environment"];
-        private static readonly string[] AccountBalanceHeaders = ["X-Target-Environment"];
-        private static readonly string[] RequestToPayHeaders = ["X-Reference-Id", "X-Target-Environment"];
-        private static readonly string[] RequestToWithdrawHeadersV1 = ["X-Reference-Id", "X-Target-Environment"];
-        private static readonly string[] RequestToWithdrawHeadersV2 = ["X-Reference-Id", "X-Target-Environment"];
-        private static readonly string[] RequestToPayTransactionStatusHeaders = ["X-Target-Environment"];
-        private static readonly string[] RequestToWithdrawTransactionStatusHeaders = ["X-Target-Environment"];
-        private static readonly string[] AccountHolderStatusHeaders = ["X-Target-Environment"];
+
 
         // BC Authorize
         [HttpPost("v1_0/bc-authorize")]
         public async Task<IActionResult> BcAuthorize(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
             [FromForm] BcAuthorizeRequest request,
             [FromServices] AuthContext authContext)
         {
             // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null)
-            {
-                return Unauthorized(new ErrorReason
-                {
-                    Code = "UNAUTHORIZED",
-                    Message = "Invalid or missing authorization header."
-                });
-            }
-
-            // Validate required headers
-            authContext.ValidateHeaders(BcAuthorizeHeaders);
+            await CheckAuthentication(authContext);
+            
 
             // Validate request body
             if (request == null || 
@@ -83,11 +63,10 @@ namespace Axon_Momo_Service.Controllers
         }
          
 
-
         // 1. Create Access Token
         [HttpPost("token")]
         public async Task<IActionResult> CreateAccessToken(
-            [FromHeader(Name = "Authorization")] string authorization,
+            [FromHeader(Name = "Authorization")] string? authorization,
             [FromServices] AuthContext authContext,
             [FromServices] DataContext db)
         {
@@ -144,48 +123,48 @@ namespace Axon_Momo_Service.Controllers
         }
 
         // 2. Create Oauth2 Token
-        [HttpPost("/oauth2/token")]
+        [HttpPost("oauth2/token")]
         public async Task<IActionResult> CreateOauth2Token(
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromForm] Oauth2TokenRequest request,
             [FromServices] AuthContext authContext)
         {
             // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
+            await CheckAuthentication(authContext);
 
-            // Validate required headers
-            authContext.ValidateHeaders(CreateOauth2TokenHeaders);
+            // Validate request body
+            if (request == null || string.IsNullOrWhiteSpace(request.GrantType))
+            {
+                return BadRequest(new ErrorReason
+                {
+                    Code = "INVALID_REQUEST",
+                    Message = "Invalid or missing grant_type in request body."
+                });
+            }
 
-            var tokenResponse = new
+            // Mock success response
+            return Ok(new
             {
                 access_token = Guid.NewGuid().ToString("N"),
                 token_type = "Bearer",
                 expires_in = 3600,
                 scope = "collection",
-                refresh_token = Guid.NewGuid().ToString(),
+                refresh_token = Guid.NewGuid().ToString("N"),
                 refresh_token_expired_in = 86400
-            };
-
-            return Ok(tokenResponse);
+            });
         }
 
 
         // 3. Create Payments
         [HttpPost("/v2_0/payment")]
-        [Authorize]
-        public async Task<IActionResult> CreatePayments(
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
-            [FromHeader(Name = "X-Reference-Id")] string referenceId,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromBody] CreatePaymentsRequest request,
-            [FromServices] AuthContext authContext)
+        // [Authorize]
+        public IActionResult CreatePayments(
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+            [FromHeader(Name = "X-Reference-Id")] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromBody] CreatePaymentsRequest request)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(PaymentHeaders);
 
             // Validate request body
             if (request == null || 
@@ -235,18 +214,12 @@ namespace Axon_Momo_Service.Controllers
 
         // 4. Get Account Balance
         [HttpGet("/v1_0/account/balance")]
-        [Authorize]
-        public async Task<IActionResult> GetAccountBalance(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromServices] AuthContext authContext)
+        // [Authorize]
+        public IActionResult GetAccountBalance(
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(AccountBalanceHeaders);
+          
 
             // Simulate error cases
             if (targetEnvironment == "invalid")
@@ -281,27 +254,21 @@ namespace Axon_Momo_Service.Controllers
             return Ok(new Balance
             {
                 AvailableBalance = "1000.00",
-                Currency = "UGX"
+                Currency = "GHS"
             });
         }
 
         // 5. Request To Pay
         [HttpPost("/v1_0/requesttopay")]
-        [Authorize]
-        public async Task<IActionResult> RequestToPay(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
-            [FromHeader(Name = "X-Reference-Id")] string referenceId,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromBody] RequestToPayRequest request,
-            [FromServices] AuthContext authContext)
+        // [Authorize]
+        public IActionResult RequestToPay(
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+            [FromHeader(Name = "X-Reference-Id")] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromBody] RequestToPayRequest request)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(RequestToPayHeaders);
+          
 
             // Validate request body
             if (request == null || 
@@ -353,21 +320,14 @@ namespace Axon_Momo_Service.Controllers
 
         // 6. RequestToWithdraw-V1
         [HttpPost("/v1_0/requesttowithdraw")]
-        [Authorize]
-        public async Task<IActionResult> RequestToWithdraw(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
-            [FromHeader(Name = "X-Reference-Id")] string referenceId,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromBody] RequestToPayRequest request,
-            [FromServices] AuthContext authContext)
+        // [Authorize]
+        public IActionResult RequestToWithdraw(
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+            [FromHeader(Name = "X-Reference-Id")] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromBody] RequestToPayRequest request)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(RequestToWithdrawHeadersV1);
 
             // Validate request body
             if (request == null || 
@@ -419,20 +379,13 @@ namespace Axon_Momo_Service.Controllers
         
         // 7. RequestToWithdraw-V2
         [HttpPost("/v2_0/requesttowithdraw")]
-        [Authorize]
-        public async Task<IActionResult> RequestToWithdrawV2(
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
-            [FromHeader(Name = "X-Reference-Id")] string referenceId,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromBody] RequestToPayRequest request,
-            [FromServices] AuthContext authContext)
+        // [Authorize]
+        public IActionResult RequestToWithdrawV2(
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+            [FromHeader(Name = "X-Reference-Id")] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromBody] RequestToPayRequest request )
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(RequestToWithdrawHeadersV2);
 
             // Validate request body
             if (request == null || 
@@ -484,19 +437,12 @@ namespace Axon_Momo_Service.Controllers
 
         // 8. Request To Pay Transaction Status
          [HttpGet("/collection/v1_0/requesttopay/{referenceId}")]
-         [Authorize]
-        public async Task<IActionResult> RequesttoPayTransactionStatus(
-            [FromRoute] string referenceId,
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromServices] AuthContext authContext)
+         // [Authorize]
+        public IActionResult RequesttoPayTransactionStatus(
+            [FromRoute] string? referenceId,
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(RequestToPayTransactionStatusHeaders);
 
             // Validate referenceId
             if (string.IsNullOrWhiteSpace(referenceId))
@@ -531,7 +477,7 @@ namespace Axon_Momo_Service.Controllers
             var baseResponse = new RequestToPayResult
             {
                 Amount = "100",
-                Currency = "UGX",
+                Currency = "GHS",
                 ExternalId = "947354",
                 Payer = new Party
                 {
@@ -572,19 +518,12 @@ namespace Axon_Momo_Service.Controllers
 
         // 9. Request To Withdraw Transaction Status
         [HttpGet("/v1_0/requesttowithdraw/{referenceId}")]
-        [Authorize]
-        public async Task<IActionResult> RequestToWithdrawTransactionStatus(
-            [FromRoute] string referenceId,
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromServices] AuthContext authContext)
+        // [Authorize]
+        public IActionResult RequestToWithdrawTransactionStatus(
+            [FromRoute] string? referenceId,
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(RequestToWithdrawTransactionStatusHeaders);
 
             // Validate referenceId
             if (string.IsNullOrWhiteSpace(referenceId))
@@ -619,7 +558,7 @@ namespace Axon_Momo_Service.Controllers
             var baseResponse = new RequestToPayResult
             {
                 Amount = "100",
-                Currency = "UGX",
+                Currency = "GHS",
                 ExternalId = "947354",
                 Payer = new Party
                 {
@@ -660,20 +599,13 @@ namespace Axon_Momo_Service.Controllers
 
         // 10. ValidateAccountHolderStatus
          [HttpGet("v1_0/accountholder/{accountHolderIdType}/{accountHolderId}/active")]
-         [Authorize]
-        public async Task<IActionResult> ValidateAccountHolderStatus(
-            [FromRoute] string accountHolderIdType,
-            [FromRoute] string accountHolderId,
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromServices] AuthContext authContext)
+         // [Authorize]
+        public IActionResult ValidateAccountHolderStatus(
+            [FromRoute] string? accountHolderIdType,
+            [FromRoute] string? accountHolderId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(AccountHolderStatusHeaders);
+            
 
             // Validate accountHolderIdType (case-sensitive, must be lowercase 'msisdn' or 'email')
             if (string.IsNullOrWhiteSpace(accountHolderIdType) || 

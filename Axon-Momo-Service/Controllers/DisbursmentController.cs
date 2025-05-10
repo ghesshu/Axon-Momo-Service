@@ -14,21 +14,11 @@ namespace Axon_Momo_Service.Controllers
     [ApiController]
     public class DisbursmentController : BaseController
     {
-        private static readonly string[] BcAuthorizeHeaders = ["X-Target-Environment"];
-        private static readonly string[] CreateOauth2TokenHeaders = ["X-Target-Environment"];
-        private static readonly string[] DepositHeaders = ["X-Reference-Id", "X-Target-Environment"];
-        private static readonly string[] DepositV2Headers = [ "X-Reference-Id", "X-Target-Environment"];
-        private static readonly string[] TransferHeaders = [ "X-Reference-Id", "X-Target-Environment"];
-        private static readonly string[] TransferStatusHeaders = [ "X-Target-Environment"];
-        private static readonly string[] AccountHolderStatusHeaders = [ "X-Target-Environment"];
-    
-
         // 1. BC Authorize
         [HttpPost("v1_0/bc-authorize")]
         public async Task<IActionResult> BcAuthorize(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
             [FromForm] BcAuthorizeRequest request,
             [FromServices] AuthContext authContext)
         {
@@ -42,9 +32,6 @@ namespace Axon_Momo_Service.Controllers
                     Message = "Invalid or missing authorization header."
                 });
             }
-
-            // Validate required headers
-            authContext.ValidateHeaders(BcAuthorizeHeaders);
 
             // Validate request body
             if (request == null || 
@@ -82,8 +69,7 @@ namespace Axon_Momo_Service.Controllers
         // 2. Create Oauth2 Token
         [HttpPost("oauth2/token")]
         public async Task<IActionResult> CreateOauth2Token(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
             [FromForm] Oauth2TokenRequest request,
             [FromServices] AuthContext authContext)
         {
@@ -97,10 +83,6 @@ namespace Axon_Momo_Service.Controllers
                     Message = "Invalid or missing authorization header."
                 });
             }
-
-            // Validate required headers
-            authContext.ValidateHeaders(CreateOauth2TokenHeaders);
-
             // Validate request body
             if (request == null || string.IsNullOrWhiteSpace(request.GrantType))
             {
@@ -127,8 +109,7 @@ namespace Axon_Momo_Service.Controllers
         // 3. Create Access Token
         [HttpPost("token")]
         public async Task<IActionResult> CreateAccessToken(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromServices] AuthContext authContext,
+            [FromHeader(Name = "Authorization")] string authorization,  
             [FromServices] DataContext db)
         {
             // Check if authorization header exists and has valid format
@@ -183,23 +164,16 @@ namespace Axon_Momo_Service.Controllers
             });
         }
 
+
         // 3. Deposit V_01
         [HttpPost("/collection/v1_0/deposit")]
         // [Authorize]
-        public async Task<IActionResult> CreateDeposit(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
-            [FromHeader(Name = "X-Reference-Id")] string referenceId,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromBody] DepositRequest request,
-            [FromServices] AuthContext authContext)
+        public IActionResult CreateDeposit(
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+            [FromHeader(Name = "X-Reference-Id")] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromBody] DepositRequest request)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(DepositHeaders);
 
             // Validate request body
             if (request == null || 
@@ -226,7 +200,7 @@ namespace Axon_Momo_Service.Controllers
                 });
             }
 
-            if (request.Currency != "UGX") // Simulate invalid currency
+            if (request.Currency != "GHS") // Simulate invalid currency
             {
                 return StatusCode(500, new ErrorReason
                 {
@@ -242,20 +216,12 @@ namespace Axon_Momo_Service.Controllers
         // 4. Deposit V_02
         [HttpPost("/collection/v2_0/deposit")]
         // [Authorize]
-        public async Task<IActionResult> CreateDepositV2(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
-            [FromHeader(Name = "X-Reference-Id")] string referenceId,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromBody] DepositV2Request request,
-            [FromServices] AuthContext authContext)
+        public IActionResult CreateDepositV2(
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+            [FromHeader(Name = "X-Reference-Id")] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromBody] DepositV2Request request)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(DepositV2Headers);
 
             // Validate request body
             if (request == null || 
@@ -282,7 +248,7 @@ namespace Axon_Momo_Service.Controllers
                 });
             }
 
-            if (request.Currency != "UGX") // Simulate invalid currency
+            if (request.Currency != "GHS") // Simulate invalid currency
             {
                 return StatusCode(500, new ErrorReason
                 {
@@ -299,20 +265,12 @@ namespace Axon_Momo_Service.Controllers
         // 5. Transfer
         [HttpPost("v1_0/transfer")]
         // [Authorize]
-        public async Task<IActionResult> CreateTransfer(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Callback-Url")] string callbackUrl,
-            [FromHeader(Name = "X-Reference-Id")] string referenceId,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromBody] TransferRequest request,
-            [FromServices] AuthContext authContext)
+        public IActionResult CreateTransfer(
+            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+            [FromHeader(Name = "X-Reference-Id")] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromBody] TransferRequest request)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(TransferHeaders);
 
             // Validate request body
             if (request == null || 
@@ -348,7 +306,7 @@ namespace Axon_Momo_Service.Controllers
                 });
             }
 
-            if (request.Currency != "UGX") // Simulate invalid currency as client error
+            if (request.Currency != "GHS") // Simulate invalid currency as client error
             {
                 return BadRequest(new ErrorReason
                 {
@@ -365,18 +323,10 @@ namespace Axon_Momo_Service.Controllers
         // 6. Get Transfer Status
         [HttpGet("v1_0/transfer/{referenceId}")]
         // [Authorize]
-        public async Task<IActionResult> GetTransferStatus(
-            [FromRoute] string referenceId,
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
-            [FromServices] AuthContext authContext)
+        public IActionResult GetTransferStatus(
+            [FromRoute] string? referenceId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(TransferStatusHeaders);
 
             // Validate referenceId
             if (string.IsNullOrWhiteSpace(referenceId))
@@ -411,7 +361,7 @@ namespace Axon_Momo_Service.Controllers
             var baseResponse = new DisbursmentTransferResult
             {
                 Amount = "100",
-                Currency = "UGX",
+                Currency = "GHS",
                 ExternalId = "83453",
                 Payee = new Party
                 {
@@ -465,19 +415,12 @@ namespace Axon_Momo_Service.Controllers
         // 7. Get Account Holder Status
         [HttpGet("v1_0/accountholder/{accountHolderIdType}/{accountHolderId}/active")]
         // [Authorize]
-        public async Task<IActionResult> ValidateAccountHolderStatus(
-            [FromRoute] string accountHolderIdType,
-            [FromRoute] string accountHolderId,
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromHeader(Name = "X-Target-Environment")] string targetEnvironment,
+        public IActionResult ValidateAccountHolderStatus(
+            [FromRoute] string? accountHolderIdType,
+            [FromRoute] string? accountHolderId,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
             [FromServices] AuthContext authContext)
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null) return authCheck;
-
-            // Validate required headers
-            authContext.ValidateHeaders(AccountHolderStatusHeaders);
 
             // Validate accountHolderIdType
             var validIdTypes = new[] { "MSISDN", "email", "alias", "id" };
