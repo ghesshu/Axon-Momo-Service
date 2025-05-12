@@ -22,7 +22,6 @@ project.fragment.lock.json
 artifacts/
 
 # .NET Core
-*.db
 *.pdb
 *.cache
 *.log
