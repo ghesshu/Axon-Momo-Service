@@ -49,7 +49,7 @@ builder.Services.AddEndpointsApiExplorer();
 
 // Register Database connection
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add JWT configuration
 builder.Services.AddScoped<JwtService>();

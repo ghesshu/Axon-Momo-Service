@@ -26,6 +26,8 @@ artifacts/
 *.pdb
 *.cache
 *.log
+*.db-shm
+*.db-wal
 
 # Rider
 .idea/

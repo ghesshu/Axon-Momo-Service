@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Axon_Momo_Service.Data;
+using Axon_Momo_Service.Features.Auth;
 using Axon_Momo_Service.Features.Collection;
 using Axon_Momo_Service.Features.Common;
 using Axon_Momo_Service.Services;
@@ -17,20 +18,18 @@ namespace Axon_Momo_Service.Controllers
     {
         // Common headers
 
-
+        // Uses application/x-www-form-urlencoded
         // BC Authorize
         [HttpPost("v1_0/bc-authorize")]
         public async Task<IActionResult> BcAuthorize(
             [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
             [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
             [FromForm] BcAuthorizeRequest request,
-            [FromServices] AuthContext authContext)
-        {
-            // Check authentication
-            await CheckAuthentication(authContext);
+            [FromServices] AuthContext authContext,
+            [FromServices] DataContext db)
             
-
-            // Validate request body
+        {
+          // Validate request body
             if (request == null || 
                 string.IsNullOrWhiteSpace(request.Scope) || 
                 string.IsNullOrWhiteSpace(request.LoginHint))
@@ -53,13 +52,40 @@ namespace Axon_Momo_Service.Controllers
                 });
             }
 
-            // Mock success response
-            return Ok(new
+            // Look up user by LoginHint (assuming LoginHint maps to Tel)
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Tel == request.LoginHint);
+            if (user == null)
             {
-                auth_req_id = Guid.NewGuid().ToString("N"),
-                interval = 5,
-                expires_in = 600
-            });
+                return NotFound(new ErrorReason
+                {
+                    Code = "PAYEE_NOT_FOUND",
+                    Message = "User not found."
+                });
+            }
+
+            // Create auth token
+            var interval = 5;
+            var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeMilliseconds();
+            var token = new AuthToken
+            {
+                UserId = user.Id,
+                Interval = interval,
+                Expires_in = expiry
+            };
+
+            // Save token to database
+            db.AuthTokens.Add(token);
+            await db.SaveChangesAsync();
+
+            // Prepare response
+            var response = new
+            {
+                auth_req_id = token.Id.ToString(),
+                interval = interval,
+                expires_in = expiry
+            };
+
+            return Ok(response);
         }
          
 
@@ -157,7 +183,7 @@ namespace Axon_Momo_Service.Controllers
 
 
         // 3. Create Payments
-        [HttpPost("/v2_0/payment")]
+        [HttpPost("v2_0/payment")]
         // [Authorize]
         public IActionResult CreatePayments(
             [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
@@ -213,7 +239,7 @@ namespace Axon_Momo_Service.Controllers
         }
 
         // 4. Get Account Balance
-        [HttpGet("/v1_0/account/balance")]
+        [HttpGet("v1_0/account/balance")]
         // [Authorize]
         public IActionResult GetAccountBalance(
             [FromHeader(Name = "Authorization")] string? authorization,
@@ -259,7 +285,7 @@ namespace Axon_Momo_Service.Controllers
         }
 
         // 5. Request To Pay
-        [HttpPost("/v1_0/requesttopay")]
+        [HttpPost("v1_0/requesttopay")]
         // [Authorize]
         public IActionResult RequestToPay(
             [FromHeader(Name = "Authorization")] string? authorization,
@@ -319,7 +345,7 @@ namespace Axon_Momo_Service.Controllers
         }
 
         // 6. RequestToWithdraw-V1
-        [HttpPost("/v1_0/requesttowithdraw")]
+        [HttpPost("v1_0/requesttowithdraw")]
         // [Authorize]
         public IActionResult RequestToWithdraw(
             [FromHeader(Name = "Authorization")] string? authorization,
@@ -378,7 +404,7 @@ namespace Axon_Momo_Service.Controllers
         }
         
         // 7. RequestToWithdraw-V2
-        [HttpPost("/v2_0/requesttowithdraw")]
+        [HttpPost("v2_0/requesttowithdraw")]
         // [Authorize]
         public IActionResult RequestToWithdrawV2(
             [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
@@ -436,7 +462,7 @@ namespace Axon_Momo_Service.Controllers
         }
 
         // 8. Request To Pay Transaction Status
-         [HttpGet("/collection/v1_0/requesttopay/{referenceId}")]
+         [HttpGet("collection/v1_0/requesttopay/{referenceId}")]
          // [Authorize]
         public IActionResult RequesttoPayTransactionStatus(
             [FromRoute] string? referenceId,
@@ -517,7 +543,7 @@ namespace Axon_Momo_Service.Controllers
         }
 
         // 9. Request To Withdraw Transaction Status
-        [HttpGet("/v1_0/requesttowithdraw/{referenceId}")]
+        [HttpGet("v1_0/requesttowithdraw/{referenceId}")]
         // [Authorize]
         public IActionResult RequestToWithdrawTransactionStatus(
             [FromRoute] string? referenceId,

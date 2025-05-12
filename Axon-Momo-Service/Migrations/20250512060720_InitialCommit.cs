@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Axon_Momo_Service.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class InitialCommit : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,8 +15,8 @@ namespace Axon_Momo_Service.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Tel = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Tel = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -27,10 +27,10 @@ namespace Axon_Momo_Service.Migrations
                 name: "AuthTokens",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Interval = table.Column<int>(type: "integer", nullable: false),
-                    Expires_in = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Interval = table.Column<int>(type: "INTEGER", nullable: false),
+                    Expires_in = table.Column<long>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -17,7 +17,7 @@ public class DataContextFactory : IDesignTimeDbContextFactory<DataContext>
         var optionsBuilder = new DbContextOptionsBuilder<DataContext>();
         var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-        optionsBuilder.UseNpgsql(connectionString); // Change if you're not using PostgreSQL
+        optionsBuilder.UseSqlite(connectionString); // Change if you're not using PostgreSQL
 
         return new DataContext(optionsBuilder.Options);
     }

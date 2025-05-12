@@ -166,7 +166,7 @@ namespace Axon_Momo_Service.Controllers
 
 
         // 3. Deposit V_01
-        [HttpPost("/collection/v1_0/deposit")]
+        [HttpPost("collection/v1_0/deposit")]
         // [Authorize]
         public IActionResult CreateDeposit(
             [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
@@ -214,7 +214,7 @@ namespace Axon_Momo_Service.Controllers
         }
 
         // 4. Deposit V_02
-        [HttpPost("/collection/v2_0/deposit")]
+        [HttpPost("collection/v2_0/deposit")]
         // [Authorize]
         public IActionResult CreateDepositV2(
             [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
