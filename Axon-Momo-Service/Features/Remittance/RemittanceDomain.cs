@@ -7,59 +7,60 @@ namespace Axon_Momo_Service.Features.Remittance;
 
     public class CashTransferRequest
     {
-        public string Amount { get; set; }
-        public string Currency { get; set; }
-        public Party Payee { get; set; }
-        public string ExternalId { get; set; }
-        public string OrginatingCountry { get; set; }
-        public string OriginalAmount { get; set; }
-        public string OriginalCurrency { get; set; }
-        public string PayerMessage { get; set; }
-        public string PayeeNote { get; set; }
-        public string PayerIdentificationType { get; set; }
-        public string PayerIdentificationNumber { get; set; }
-        public string PayerIdentity { get; set; }
-        public string PayerFirstName { get; set; }
-        public string PayerSurName { get; set; }
-        public string PayerLanguageCode { get; set; }
-        public string PayerEmail { get; set; }
-        public string PayerMsisdn { get; set; }
-        public string PayerGender { get; set; }
+        public string Amount { get; set; } = string.Empty;
+        public string Currency { get; set; } = string.Empty;
+        public Party Payee { get; set; } = new Party();
+        public string ExternalId { get; set; } = string.Empty;
+        public string OrginatingCountry { get; set; } = string.Empty;
+        public string OriginalAmount { get; set; } = string.Empty;
+        public string OriginalCurrency { get; set; } = string.Empty;
+        public string PayerMessage { get; set; } = string.Empty;
+        public string PayeeNote { get; set; } = string.Empty;
+        public string PayerIdentificationType { get; set; } = string.Empty;
+        public string PayerIdentificationNumber { get; set; } = string.Empty;
+        public string PayerIdentity { get; set; } = string.Empty;
+        public string PayerFirstName { get; set; } = string.Empty;
+        public string PayerSurName { get; set; } = string.Empty;
+        public string PayerLanguageCode { get; set; } = string.Empty;
+        public string PayerEmail { get; set; } = string.Empty;
+        public string PayerMsisdn { get; set; } = string.Empty;
+        public string PayerGender { get; set; } = string.Empty;
     }
 
         public class CashTransferResult
     {
-        public string Amount { get; set; }
-        public string Currency { get; set; }
-        public string FinancialTransactionId { get; set; }
-        public string ExternalId { get; set; }
-        public Party Payee { get; set; }
-        public string PayerMessage { get; set; }
-        public string PayeeNote { get; set; }
-        public string Status { get; set; }
-        public ErrorReason Reason { get; set; }
+
+        public string Amount { get; set; } = string.Empty;
+        public string Currency { get; set; } = string.Empty;
+        public string FinancialTransactionId { get; set; } = string.Empty;
+        public string ExternalId { get; set; } = string.Empty;
+        public Party Payee { get; set; } = new Party();
+        public string PayerMessage { get; set; } = string.Empty;
+        public string PayeeNote { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public ErrorReason? Reason { get; set; } 
     }
 
         public class TransferResult
     {
-        public string Amount { get; set; }
-        public string Currency { get; set; }
-        public string FinancialTransactionId { get; set; }
-        public string ExternalId { get; set; }
-        public Party Payee { get; set; }
-        public string PayerMessage { get; set; }
-        public string PayeeNote { get; set; }
-        public string Status { get; set; }
-        public ErrorReason Reason { get; set; }
+        public string Amount { get; set; } = string.Empty;
+        public string Currency { get; set; } = string.Empty;
+        public string FinancialTransactionId { get; set; } = string.Empty;
+        public string ExternalId { get; set; } = string.Empty;
+        public Party Payee { get; set; } = new Party();
+        public string PayerMessage { get; set; } = string.Empty;
+        public string PayeeNote { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public ErrorReason? Reason { get; set; }
     }
 
     public class RemittanceTransferRequest
     {
-        public string Amount { get; set; }
-        public string Currency { get; set; }
-        public string ExternalId { get; set; }
-        public Party Payee { get; set; }
-        public string PayerMessage { get; set; }
-        public string PayeeNote { get; set; }
+        public string Amount { get; set; } = string.Empty;
+        public string Currency { get; set; } = string.Empty;
+        public string ExternalId { get; set; } = string.Empty;
+        public Party Payee { get; set; } = new Party();
+        public string PayerMessage { get; set; } = string.Empty;
+        public string PayeeNote { get; set; } = string.Empty;
     }
 

@@ -50,3 +50,4 @@ dist/
 *.vspscc
 *.vssscc
 *.code-workspace
+.fake

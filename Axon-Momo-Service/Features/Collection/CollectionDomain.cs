@@ -76,14 +76,14 @@ public class PreApprovalDetails
 public class DeliveryNotificationRequest
 {
     [Required]
-    public string NotificationMessage { get; set; }
+    public string NotificationMessage { get; set; } = string.Empty;
 }
 
 public class PreApprovalRequest
 {
-    public Party Payer { get; set; }
-    public string PayerCurrency { get; set; }
-    public string PayerMessage { get; set; }
+    public Party Payer { get; set; } = new Party();
+    public string PayerCurrency { get; set; } = string.Empty;
+    public string PayerMessage { get; set; } = string.Empty;
     public int? ValidityTime { get; set; }
 }
 
@@ -92,35 +92,35 @@ public class RequestToPayRequest
     public string Amount { get; set; } = string.Empty;
     public string Currency { get; set; }   = string.Empty;
     public string ExternalId { get; set; } = string.Empty;
-    public Party Payer { get; set; } 
+    public Party Payer { get; set; } = new Party();
     public string PayerMessage { get; set; } = string.Empty;
     public string PayeeNote { get; set; } = string.Empty;
 }
 
 public class RequestToPayResult
 {
-    public string Amount { get; set; }
-    public string Currency { get; set; }
-    public string FinancialTransactionId { get; set; }
-    public string ExternalId { get; set; }
-    public Party Payer { get; set; }
-    public string PayerMessage { get; set; }
-    public string PayeeNote { get; set; }
-    public string Status { get; set; }
+    public string Amount { get; set; } = string.Empty;
+    public string Currency { get; set; } = string.Empty;
+    public string FinancialTransactionId { get; set; } = string.Empty;
+    public string ExternalId { get; set; } = string.Empty;
+    public Party Payer { get; set; } = new Party();
+    public string PayerMessage { get; set; } = string.Empty;
+    public string PayeeNote { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
     public ErrorReason? Reason { get; set; }
 }
 
 
 public class RequestToWithdrawResult
 {
-    public string Amount { get; set; }
-    public string Currency { get; set; }
-    public string FinancialTransactionId { get; set; }
-    public string ExternalId { get; set; }
-    public Party Payer { get; set; }
-    public string PayerMessage { get; set; }
-    public string PayeeNote { get; set; }
-    public string Status { get; set; }
+    public string Amount { get; set; } = string.Empty;
+    public string Currency { get; set; } = string.Empty;
+    public string FinancialTransactionId { get; set; } = string.Empty;
+    public string ExternalId { get; set; } = string.Empty;
+    public Party Payer { get; set; } = new Party();
+    public string PayerMessage { get; set; } = string.Empty;
+    public string PayeeNote { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
     public ErrorReason? Reason { get; set; }
 }
 
@@ -128,12 +128,12 @@ public class RequestToWithdrawResult
 
 public class RequestToWithdrawRequest
 {
-    public string Amount { get; set; }
-    public string Currency { get; set; }
-    public string ExternalId { get; set; }
-    public Party Payer { get; set; }
-    public string PayerMessage { get; set; }
-    public string PayeeNote { get; set; }
+    public string Amount { get; set; } = string.Empty;
+    public string Currency { get; set; } = string.Empty;
+    public string ExternalId { get; set; } = string.Empty;
+    public Party Payer { get; set; } = new Party();
+    public string PayerMessage { get; set; } = string.Empty;
+    public string PayeeNote { get; set; } = string.Empty;
 }
 
 

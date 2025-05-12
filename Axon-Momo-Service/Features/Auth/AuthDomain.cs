@@ -4,7 +4,7 @@ namespace Axon_Momo_Service.Features.Auth;
 
 public class AuthRequest
 {
-    public string Tel { get; set; }
+    public string Tel { get; set; } = string.Empty;
 }
 
 
