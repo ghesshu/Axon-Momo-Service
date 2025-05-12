@@ -19,7 +19,7 @@ namespace Axon_Momo_Service.Controllers
         // Common headers
 
         // Uses application/x-www-form-urlencoded
-        // BC Authorize
+        // 1. BC Authorize
         [HttpPost("v1_0/bc-authorize")]
         public async Task<IActionResult> BcAuthorize(
             [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
@@ -88,8 +88,41 @@ namespace Axon_Momo_Service.Controllers
             return Ok(response);
         }
          
+        // 2. Create Oauth2 Token
+        [HttpPost("oauth2/token")]
+        public async Task<IActionResult> CreateOauth2Token(
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+            [FromForm] Oauth2TokenRequest request,
+            [FromServices] AuthContext authContext)
+        {
+            // Check authentication
+            await CheckAuthentication(authContext);
 
-        // 1. Create Access Token
+            // Validate request body
+            if (request == null || string.IsNullOrWhiteSpace(request.GrantType))
+            {
+                return BadRequest(new ErrorReason
+                {
+                    Code = "INVALID_REQUEST",
+                    Message = "Invalid or missing grant_type in request body."
+                });
+            }
+
+            // Mock success response
+            return Ok(new
+            {
+                access_token = Guid.NewGuid().ToString("N"),
+                token_type = "Bearer",
+                expires_in = 3600,
+                scope = "collection",
+                refresh_token = Guid.NewGuid().ToString("N"),
+                refresh_token_expired_in = 86400
+            });
+        }
+
+
+        // 3. Create Access Token
         [HttpPost("token")]
         public async Task<IActionResult> CreateAccessToken(
             [FromHeader(Name = "Authorization")] string? authorization,
@@ -148,41 +181,8 @@ namespace Axon_Momo_Service.Controllers
             });
         }
 
-        // 2. Create Oauth2 Token
-        [HttpPost("oauth2/token")]
-        public async Task<IActionResult> CreateOauth2Token(
-            [FromHeader(Name = "Authorization")] string? authorization,
-            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
-            [FromForm] Oauth2TokenRequest request,
-            [FromServices] AuthContext authContext)
-        {
-            // Check authentication
-            await CheckAuthentication(authContext);
 
-            // Validate request body
-            if (request == null || string.IsNullOrWhiteSpace(request.GrantType))
-            {
-                return BadRequest(new ErrorReason
-                {
-                    Code = "INVALID_REQUEST",
-                    Message = "Invalid or missing grant_type in request body."
-                });
-            }
-
-            // Mock success response
-            return Ok(new
-            {
-                access_token = Guid.NewGuid().ToString("N"),
-                token_type = "Bearer",
-                expires_in = 3600,
-                scope = "collection",
-                refresh_token = Guid.NewGuid().ToString("N"),
-                refresh_token_expired_in = 86400
-            });
-        }
-
-
-        // 3. Create Payments
+        // 4. Create Payments
         [HttpPost("v2_0/payment")]
         // [Authorize]
         public IActionResult CreatePayments(
@@ -238,7 +238,7 @@ namespace Axon_Momo_Service.Controllers
             return StatusCode(202);
         }
 
-        // 4. Get Account Balance
+        // 5. Get Account Balance
         [HttpGet("v1_0/account/balance")]
         // [Authorize]
         public IActionResult GetAccountBalance(
@@ -284,7 +284,7 @@ namespace Axon_Momo_Service.Controllers
             });
         }
 
-        // 5. Request To Pay
+        // 6. Request To Pay
         [HttpPost("v1_0/requesttopay")]
         // [Authorize]
         public IActionResult RequestToPay(
@@ -344,7 +344,7 @@ namespace Axon_Momo_Service.Controllers
             return StatusCode(202);
         }
 
-        // 6. RequestToWithdraw-V1
+        // 7. RequestToWithdraw-V1
         [HttpPost("v1_0/requesttowithdraw")]
         // [Authorize]
         public IActionResult RequestToWithdraw(
@@ -403,7 +403,7 @@ namespace Axon_Momo_Service.Controllers
             return StatusCode(202);
         }
         
-        // 7. RequestToWithdraw-V2
+        // 8. RequestToWithdraw-V2
         [HttpPost("v2_0/requesttowithdraw")]
         // [Authorize]
         public IActionResult RequestToWithdrawV2(
@@ -461,7 +461,7 @@ namespace Axon_Momo_Service.Controllers
             return StatusCode(202);
         }
 
-        // 8. Request To Pay Transaction Status
+        // 9. Request To Pay Transaction Status
          [HttpGet("collection/v1_0/requesttopay/{referenceId}")]
          // [Authorize]
         public IActionResult RequesttoPayTransactionStatus(
@@ -542,7 +542,7 @@ namespace Axon_Momo_Service.Controllers
             return Ok(baseResponse);
         }
 
-        // 9. Request To Withdraw Transaction Status
+        // 10. Request To Withdraw Transaction Status
         [HttpGet("v1_0/requesttowithdraw/{referenceId}")]
         // [Authorize]
         public IActionResult RequestToWithdrawTransactionStatus(
@@ -623,7 +623,7 @@ namespace Axon_Momo_Service.Controllers
             return Ok(baseResponse);
         }
 
-        // 10. ValidateAccountHolderStatus
+        // 11. ValidateAccountHolderStatus
          [HttpGet("v1_0/accountholder/{accountHolderIdType}/{accountHolderId}/active")]
          // [Authorize]
         public IActionResult ValidateAccountHolderStatus(
