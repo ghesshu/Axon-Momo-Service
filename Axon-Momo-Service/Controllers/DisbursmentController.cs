@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Axon_Momo_Service.Data;
+using Axon_Momo_Service.Features.Auth;
 using Axon_Momo_Service.Features.Common;
 using Axon_Momo_Service.Features.Disbursment;
 using Axon_Momo_Service.Services;
@@ -20,20 +21,10 @@ namespace Axon_Momo_Service.Controllers
             [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
             [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
             [FromForm] BcAuthorizeRequest request,
-            [FromServices] AuthContext authContext)
+            [FromServices] AuthContext authContext,
+            [FromServices] DataContext db) 
         {
-            // Check authentication
-            var authCheck = await CheckAuthentication(authContext);
-            if (authCheck != null)
-            {
-                return Unauthorized(new ErrorReason
-                {
-                    Code = "UNAUTHORIZED",
-                    Message = "Invalid or missing authorization header."
-                });
-            }
-
-            // Validate request body
+          // Validate request body
             if (request == null || 
                 string.IsNullOrWhiteSpace(request.Scope) || 
                 string.IsNullOrWhiteSpace(request.LoginHint))
@@ -56,15 +47,42 @@ namespace Axon_Momo_Service.Controllers
                 });
             }
 
-            // Mock success response
-            return Ok(new
+            // Look up user by LoginHint (assuming LoginHint maps to Tel)
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Tel == request.LoginHint);
+            if (user == null)
             {
-                auth_req_id = Guid.NewGuid().ToString("N"),
-                interval = 5,
-                expires_in = 600
-            });
+                return NotFound(new ErrorReason
+                {
+                    Code = "PAYEE_NOT_FOUND",
+                    Message = "User not found."
+                });
+            }
+
+            // Create auth token
+            var interval = 5;
+            var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeMilliseconds();
+            var token = new AuthToken
+            {
+                UserId = user.Id,
+                Interval = interval,
+                Expires_in = expiry
+            };
+
+            // Save token to database
+            db.AuthTokens.Add(token);
+            await db.SaveChangesAsync();
+
+            // Prepare response
+            var response = new
+            {
+                auth_req_id = token.Id.ToString(),
+                interval = interval,
+                expires_in = expiry
+            };
+
+            return Ok(response);
         }
-         
+                  
 
         // 2. Create Oauth2 Token
         [HttpPost("oauth2/token")]
