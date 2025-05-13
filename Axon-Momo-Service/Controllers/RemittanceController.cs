@@ -17,94 +17,87 @@ namespace Axon_Momo_Service.Controllers
 
         // 1. BC Authorize
         [HttpPost("v1_0/bc-authorize")]
-        public async Task<IActionResult> BcAuthorize(
-            [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
-            [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
-            [FromForm] BcAuthorizeRequest request,
-            [FromServices] AuthContext authContext,
-            [FromServices] DataContext db)
+        public IActionResult BcAuthorize(
+        [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
+        [FromHeader(Name = "X-Callback-Url")] string? callbackUrl,
+        [FromForm] BcAuthorizeRequest request)
+    {
+        // Simulate request body validation
+        if (request == null || 
+            string.IsNullOrWhiteSpace(request.Scope) || 
+            string.IsNullOrWhiteSpace(request.LoginHint))
         {
-          // Validate request body
-            if (request == null || 
-                string.IsNullOrWhiteSpace(request.Scope) || 
-                string.IsNullOrWhiteSpace(request.LoginHint))
+            return BadRequest(new ErrorReason
             {
-                return BadRequest(new ErrorReason
-                {
-                    Code = "INVALID_REQUEST",
-                    Message = "Invalid or missing scope or login_hint in request body."
-                });
-            }
-
-            // Validate access_type if provided
-            if (!string.IsNullOrWhiteSpace(request.AccessType) && 
-                request.AccessType != "online" && request.AccessType != "offline")
-            {
-                return BadRequest(new ErrorReason
-                {
-                    Code = "INVALID_ACCESS_TYPE",
-                    Message = "access_type must be 'online' or 'offline'."
-                });
-            }
-
-            // Look up user by LoginHint (assuming LoginHint maps to Tel)
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Tel == request.LoginHint);
-            if (user == null)
-            {
-                return NotFound(new ErrorReason
-                {
-                    Code = "PAYEE_NOT_FOUND",
-                    Message = "User not found."
-                });
-            }
-
-            // Create auth token
-            var interval = 5;
-            var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeMilliseconds();
-            var token = new AuthToken
-            {
-                UserId = user.Id,
-                Interval = interval,
-                Expires_in = expiry
-            };
-
-            // Save token to database
-            db.AuthTokens.Add(token);
-            await db.SaveChangesAsync();
-
-            // Prepare response
-            var response = new
-            {
-                auth_req_id = token.Id.ToString(),
-                interval = interval,
-                expires_in = expiry
-            };
-
-            return Ok(response);
+                Code = "INVALID_REQUEST",
+                Message = "Invalid or missing scope or login_hint in request body."
+            });
         }
-         
 
+        // Simulate access_type validation
+        if (!string.IsNullOrWhiteSpace(request.AccessType) &&
+            request.AccessType != "online" && request.AccessType != "offline")
+        {
+            return BadRequest(new ErrorReason
+            {
+                Code = "INVALID_ACCESS_TYPE",
+                Message = "access_type must be 'online' or 'offline'."
+            });
+        }
+
+        // Simulate user lookup failure
+        if (request.LoginHint.Contains("notfound"))
+        {
+            return NotFound(new ErrorReason
+            {
+                Code = "PAYEE_NOT_FOUND",
+                Message = "User not found."
+            });
+        }
+
+        // Dummy token generation
+        var interval = 5;
+        var expiry = DateTimeOffset.UtcNow.AddMinutes(5).ToUnixTimeMilliseconds();
+        var authReqId = Guid.NewGuid().ToString();
+
+        var response = new
+        {
+            auth_req_id = authReqId,
+            interval = interval,
+            expires_in = expiry
+        };
+
+        return Ok(response);
+    }
+         
         // 2. Create Oauth2 Token
         [HttpPost("oauth2/token")]
         public IActionResult CreateOauth2Token(
             [FromHeader(Name = "Authorization")] string? authorization,
             [FromHeader(Name = "X-Target-Environment")] string? targetEnvironment,
-            [FromForm] Oauth2TokenRequest request,
-            [FromServices] AuthContext authContext)
+            [FromForm] Oauth2TokenRequest request)
         {
-           
+            // Simulate missing X-Target-Environment
+            if (string.IsNullOrWhiteSpace(targetEnvironment))
+            {
+                return BadRequest(new
+                {
+                    Code = "INVALID_TARGET_ENVIRONMENT",
+                    Message = "Missing X-Target-Environment header."
+                });
+            }
 
-            // Validate request body
+            // Simulate missing or invalid grant_type
             if (request == null || string.IsNullOrWhiteSpace(request.GrantType))
             {
-                return BadRequest(new ErrorReason
+                return BadRequest(new
                 {
                     Code = "INVALID_REQUEST",
                     Message = "Invalid or missing grant_type in request body."
                 });
             }
 
-            // Mock success response
+            // Simulate successful token generation
             return Ok(new
             {
                 access_token = Guid.NewGuid().ToString("N"),
@@ -115,66 +108,44 @@ namespace Axon_Momo_Service.Controllers
                 refresh_token_expired_in = 86400
             });
         }
-        
+
         // 3. Create Access Token
         [HttpPost("token")]
-        public async Task<IActionResult> CreateAccessToken(
-            [FromHeader(Name = "Authorization")] string authorization,
-            [FromServices] DataContext db,
-            [FromServices] JwtService jwtService)
+        public IActionResult CreateAccessToken(
+            [FromHeader(Name = "Authorization")] string? authorization,
+            [FromServices] DataContext db)
         {
-            if (string.IsNullOrEmpty(authorization))
+            try
             {
-                return Unauthorized(new ErrorReason
+                // Check if Authorization header exists
+                if (authorization ==  "Invalid")
                 {
-                    Code = "UNAUTHORIZED",
-                    Message = "Invalid or missing authorization header."
+                    return Unauthorized(new
+                    {
+                        error = "Missing or invalid Authorization header."
+                    });
+                }
+              
+
+                // Successful: return access token
+                return Ok(new
+                {
+                    access_token = Guid.NewGuid().ToString("N"), // Replace with JWT in real scenarios
+                    token_type = "Bearer",
+                    expires_in = 3600
                 });
             }
-
-            // Extract auth_req_id from authorization header
-            if (!Guid.TryParse(authorization, out Guid authReqId))
+            catch (Exception ex)
             {
-                return Unauthorized(new ErrorReason
+                // Unexpected error
+                return StatusCode(500, new
                 {
-                    Code = "INVALID_AUTH_REQ_ID",
-                    Message = "Invalid auth_req_id format."
+                    error = "An unexpected error occurred.",
+                    details = ex.Message
                 });
             }
-
-            // Find the token in database
-            var authToken = await db.AuthTokens.FirstOrDefaultAsync(t => t.Id == authReqId);
-            if (authToken == null)
-            {
-                return Unauthorized(new ErrorReason
-                {
-                    Code = "INVALID_TOKEN",
-                    Message = "Token not found."
-                });
-            }
-
-            // Check if token has expired
-            var currentTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (currentTime > authToken.Expires_in)
-            {
-                return Unauthorized(new ErrorReason
-                {
-                    Code = "TOKEN_EXPIRED",
-                    Message = "Session has expired."
-                });
-            }
-
-            // Generate JWT token
-            var jwtToken = jwtService.GenerateToken(authToken.UserId);
-
-            return Ok(new
-            {
-                access_token = jwtToken,
-                token_type = "Bearer",
-                expires_in = 3600
-            });
         }
-        
+
         // 4. CashTransfer
         [HttpPost("v2_0/cashtransfer")]
         // [Authorize] 
